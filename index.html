@@ -452,7 +452,7 @@
         // Configuration
         const CONFIG = {
             // Replace with your Cloudflare Worker URL
-            API_URL: 'https://chrome-download-api.nivy.li',
+            API_URL: 'https://your-worker-name.workers.dev',
             
             // Or use this for local testing with direct API calls
             // API_URL: null, // Will use direct calls
@@ -768,6 +768,46 @@
         function createMirrorButton(originalUrl, mirrors) {
             const id = 'mirror-' + Math.random().toString(36).substr(2, 9);
             
+            // 构建镜像选项
+            let mirrorOptions = '';
+            
+            // GitHub 镜像
+            if (mirrors.github_cloudflare || mirrors.cloudflare) {
+                const url = mirrors.github_cloudflare || mirrors.cloudflare;
+                mirrorOptions += `
+                <div class="mirror-option" onclick="window.open('${url}', '_blank')">
+                    <div class="mirror-option-title">Cloudflare Mirror (GitHub)</div>
+                    <div class="mirror-option-desc">Fast global CDN</div>
+                </div>`;
+            }
+            
+            if (mirrors.github_fastly || mirrors.fastly) {
+                const url = mirrors.github_fastly || mirrors.fastly;
+                mirrorOptions += `
+                <div class="mirror-option" onclick="window.open('${url}', '_blank')">
+                    <div class="mirror-option-title">Fastly Mirror (GitHub)</div>
+                    <div class="mirror-option-desc">Alternative CDN</div>
+                </div>`;
+            }
+            
+            if (mirrors.github_edgeone || mirrors.edgeone) {
+                const url = mirrors.github_edgeone || mirrors.edgeone;
+                mirrorOptions += `
+                <div class="mirror-option" onclick="window.open('${url}', '_blank')">
+                    <div class="mirror-option-title">EdgeOne Mirror <span class="badge" style="background: #ef4444;">CN</span></div>
+                    <div class="mirror-option-desc">Better for China users</div>
+                </div>`;
+            }
+            
+            // S3 Fastly 加速
+            if (mirrors.s3_fastly) {
+                mirrorOptions += `
+                <div class="mirror-option" onclick="window.open('${mirrors.s3_fastly}', '_blank')">
+                    <div class="mirror-option-title">Fastly CDN <span class="badge" style="background: #10b981;">Fast</span></div>
+                    <div class="mirror-option-desc">Accelerated for China</div>
+                </div>`;
+            }
+            
             return `
                 <div class="mirror-dropdown" id="${id}">
                     <button class="download-btn secondary" onclick="toggleMirror('${id}')">
@@ -776,25 +816,11 @@
                     <div class="mirror-menu">
                         <div class="mirror-option" onclick="window.open('${originalUrl}', '_blank')">
                             <div class="mirror-option-title">
-                                Official <span class="badge">Recommended</span>
+                                Official <span class="badge">Direct</span>
                             </div>
                             <div class="mirror-option-desc">Direct from source</div>
                         </div>
-                        ${mirrors.cloudflare ? `
-                        <div class="mirror-option" onclick="window.open('${mirrors.cloudflare}', '_blank')">
-                            <div class="mirror-option-title">Cloudflare Mirror</div>
-                            <div class="mirror-option-desc">Fast global CDN</div>
-                        </div>` : ''}
-                        ${mirrors.fastly ? `
-                        <div class="mirror-option" onclick="window.open('${mirrors.fastly}', '_blank')">
-                            <div class="mirror-option-title">Fastly Mirror</div>
-                            <div class="mirror-option-desc">Alternative CDN</div>
-                        </div>` : ''}
-                        ${mirrors.edgeone ? `
-                        <div class="mirror-option" onclick="window.open('${mirrors.edgeone}', '_blank')">
-                            <div class="mirror-option-title">EdgeOne Mirror <span class="badge" style="background: #ef4444;">CN</span></div>
-                            <div class="mirror-option-desc">Better for China users</div>
-                        </div>` : ''}
+                        ${mirrorOptions}
                     </div>
                 </div>
             `;
