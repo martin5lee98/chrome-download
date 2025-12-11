@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Worker API Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+            background: #007bff;
+            color: white;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Worker API Diagnostics</h1>
+    
+    <div class="test-section">
+        <h3>Step 1: Configure Worker URL</h3>
+        <input type="text" id="workerUrl" placeholder="https://your-worker-name.your-subdomain.workers.dev" />
+        <button onclick="saveUrl()">Save URL</button>
+        <div id="urlStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Step 2: Test Worker Endpoints</h3>
+        <button onclick="testRoot()">Test Root (/)</button>
+        <button onclick="testList()">Test List (/api/list)</button>
+        <button onclick="testChrome()">Test Chrome (/api/software/chrome)</button>
+        <button onclick="testAll()">Test All (/api/all)</button>
+        <div id="testResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Step 3: Detailed Response</h3>
+        <div id="detailedResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Step 4: Common Issues & Solutions</h3>
+        <div class="info status">
+            <strong>Issue: "Unexpected token '<'"</strong><br>
+            This means the Worker is returning HTML instead of JSON.<br><br>
+            
+            <strong>Common causes:</strong><br>
+            1. Worker URL is incorrect or Worker is not deployed<br>
+            2. Worker has a syntax error in the code<br>
+            3. Worker is returning an error page<br>
+            4. CORS issues (less likely)<br><br>
+
+            <strong>Solutions:</strong><br>
+            1. Visit your Worker URL directly in browser (should see JSON)<br>
+            2. Check Cloudflare Dashboard → Workers → Logs for errors<br>
+            3. Make sure you copied the ENTIRE worker code<br>
+            4. Verify the Worker is saved and deployed<br>
+        </div>
+    </div>
+
+    <script>
+        let workerUrl = localStorage.getItem('workerUrl') || '';
+        
+        if (workerUrl) {
+            document.getElementById('workerUrl').value = workerUrl;
+            document.getElementById('urlStatus').innerHTML = '<div class="success status">URL loaded from storage</div>';
+        }
+
+        function saveUrl() {
+            const url = document.getElementById('workerUrl').value.trim();
+            if (!url) {
+                document.getElementById('urlStatus').innerHTML = '<div class="error status">Please enter a URL</div>';
+                return;
+            }
+            
+            // Remove trailing slash
+            workerUrl = url.replace(/\/$/, '');
+            localStorage.setItem('workerUrl', workerUrl);
+            document.getElementById('urlStatus').innerHTML = '<div class="success status">URL saved! Now test the endpoints below.</div>';
+        }
+
+        async function testEndpoint(path, name) {
+            const resultsDiv = document.getElementById('testResults');
+            const detailedDiv = document.getElementById('detailedResults');
+            
+            if (!workerUrl) {
+                resultsDiv.innerHTML = '<div class="error status">Please configure Worker URL first!</div>';
+                return;
+            }
+
+            const fullUrl = workerUrl + path;
+            resultsDiv.innerHTML += `<div class="info status">Testing ${name}: ${fullUrl}</div>`;
+
+            try {
+                const startTime = Date.now();
+                const response = await fetch(fullUrl);
+                const duration = Date.now() - startTime;
+
+                // Get response as text first
+                const textResponse = await response.text();
+                
+                // Log details
+                const details = {
+                    url: fullUrl,
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries(response.headers.entries()),
+                    responseTime: duration + 'ms',
+                    responsePreview: textResponse.substring(0, 500)
+                };
+
+                if (response.ok) {
+                    // Try to parse as JSON
+                    try {
+                        const jsonData = JSON.parse(textResponse);
+                        resultsDiv.innerHTML += `
+                            <div class="success status">
+                                ✅ ${name} - SUCCESS (${response.status}) - ${duration}ms<br>
+                                Response is valid JSON
+                            </div>
+                        `;
+                        
+                        detailedDiv.innerHTML = `
+                            <h4>✅ Success! Response from ${name}:</h4>
+                            <pre>${JSON.stringify(jsonData, null, 2)}</pre>
+                        `;
+                    } catch (parseError) {
+                        resultsDiv.innerHTML += `
+                            <div class="error status">
+                                ⚠️ ${name} - Response OK but NOT valid JSON<br>
+                                ${parseError.message}
+                            </div>
+                        `;
+                        
+                        detailedDiv.innerHTML = `
+                            <h4>⚠️ Response is not JSON (first 500 chars):</h4>
+                            <pre>${textResponse.substring(0, 500)}</pre>
+                            <h4>Full Details:</h4>
+                            <pre>${JSON.stringify(details, null, 2)}</pre>
+                        `;
+                    }
+                } else {
+                    resultsDiv.innerHTML += `
+                        <div class="error status">
+                            ❌ ${name} - FAILED (${response.status} ${response.statusText})
+                        </div>
+                    `;
+                    
+                    detailedDiv.innerHTML = `
+                        <h4>❌ Error Response:</h4>
+                        <pre>${textResponse.substring(0, 1000)}</pre>
+                        <h4>Full Details:</h4>
+                        <pre>${JSON.stringify(details, null, 2)}</pre>
+                    `;
+                }
+
+            } catch (error) {
+                resultsDiv.innerHTML += `
+                    <div class="error status">
+                        ❌ ${name} - NETWORK ERROR<br>
+                        ${error.message}
+                    </div>
+                `;
+                
+                detailedDiv.innerHTML = `
+                    <h4>❌ Network Error:</h4>
+                    <pre>${error.stack}</pre>
+                    <p><strong>This usually means:</strong></p>
+                    <ul>
+                        <li>The Worker URL is incorrect</li>
+                        <li>The Worker is not deployed</li>
+                        <li>CORS is blocking the request (check browser console)</li>
+                        <li>Network connectivity issue</li>
+                    </ul>
+                `;
+            }
+        }
+
+        function testRoot() {
+            document.getElementById('testResults').innerHTML = '';
+            testEndpoint('/', 'Root Endpoint');
+        }
+
+        function testList() {
+            document.getElementById('testResults').innerHTML = '';
+            testEndpoint('/api/list', 'List API');
+        }
+
+        function testChrome() {
+            document.getElementById('testResults').innerHTML = '';
+            testEndpoint('/api/software/chrome', 'Chrome API');
+        }
+
+        function testAll() {
+            document.getElementById('testResults').innerHTML = '';
+            testEndpoint('/api/all', 'All Software API');
+        }
+
+        // Auto-test if URL is configured
+        if (workerUrl) {
+            setTimeout(() => {
+                document.getElementById('testResults').innerHTML = '<div class="info status">Running auto-test...</div>';
+                testRoot();
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
