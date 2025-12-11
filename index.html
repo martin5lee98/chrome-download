@@ -306,7 +306,7 @@
         // Configuration
         const CONFIG = {
             // Option 1: Use Cloudflare Worker (if you deployed one)
-            // API_URL: 'https://chrome-download-api.nivy.li',
+            // API_URL: 'https://YOUR-WORKER-NAME.workers.dev',
             
             // Option 2: Use official Google API directly (may be slower in some regions)
             API_URL: 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json',
@@ -336,12 +336,10 @@
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-                const data = await response.json();
+                const rawData = await response.json();
                 
-                // Transform data if using official API
-                if (!data.channels && data.channels) {
-                    data = transformOfficialAPIData(data);
-                }
+                // Always transform the official API data
+                const data = transformOfficialAPIData(rawData);
                 
                 renderUI(data);
             } catch (error) {
@@ -357,7 +355,9 @@
                 proxyEnabled: false
             };
 
+            // Handle both uppercase (Stable, Beta) and lowercase (stable, beta) channel names
             for (const [channel, info] of Object.entries(data.channels)) {
+                const channelLower = channel.toLowerCase();
                 const downloads = {};
                 
                 if (info.downloads && info.downloads.chrome) {
@@ -369,7 +369,7 @@
                     }
                 }
 
-                transformed.channels[channel.toLowerCase()] = {
+                transformed.channels[channelLower] = {
                     version: info.version,
                     revision: info.revision,
                     downloads
