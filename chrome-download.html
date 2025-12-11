@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrome 浏览器下载 - 国内可访问</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 12px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #856404;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+            color: #721c24;
+        }
+
+        .channel-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .tab.active {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #667eea;
+        }
+
+        .downloads {
+            display: none;
+        }
+
+        .downloads.active {
+            display: block;
+        }
+
+        .version-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .version-info strong {
+            color: #667eea;
+        }
+
+        .download-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .download-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .download-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .platform-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .platform-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .download-btn {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .download-btn:hover {
+            background: #5568d3;
+        }
+
+        .download-btn:active {
+            transform: scale(0.98);
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            color: #999;
+            font-size: 13px;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+
+            .download-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Chrome 浏览器下载</h1>
+        <p class="subtitle">适用于中国网络环境，无需翻墙</p>
+
+        <div class="warning">
+            ⚠️ <strong>注意：</strong>下载链接来自 Google 官方 CDN (storage.googleapis.com)，
+            在某些地区可能无法访问。如遇问题，建议使用代理或稍后重试。
+        </div>
+
+        <div id="content">
+            <div class="loading">
+                <p>正在获取最新版本信息...</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            数据来源：<a href="https://googlechromelabs.github.io/chrome-for-testing/" target="_blank">Chrome for Testing</a>
+            | 本站仅提供链接索引，不存储任何文件
+        </div>
+    </div>
+
+    <script>
+        // 替换为你的 Cloudflare Worker URL
+        const API_URL = 'https://YOUR-WORKER-NAME.workers.dev';
+        
+        // 如果没有部署 Worker，可以直接用官方 API（可能较慢）
+        // const API_URL = 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json';
+
+        const platformNames = {
+            'win64': { name: 'Windows 64位', icon: '🪟' },
+            'win32': { name: 'Windows 32位', icon: '🪟' },
+            'mac-x64': { name: 'macOS (Intel)', icon: '🍎' },
+            'mac-arm64': { name: 'macOS (Apple Silicon)', icon: '🍎' },
+            'linux64': { name: 'Linux 64位', icon: '🐧' }
+        };
+
+        const channelNames = {
+            'stable': '稳定版',
+            'beta': '测试版',
+            'dev': '开发版',
+            'canary': '金丝雀版'
+        };
+
+        async function fetchData() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const data = await response.json();
+                renderUI(data);
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        function renderUI(data) {
+            const content = document.getElementById('content');
+            
+            // 创建标签页
+            const tabs = document.createElement('div');
+            tabs.className = 'channel-tabs';
+            
+            const channels = ['stable', 'beta', 'dev', 'canary'];
+            channels.forEach((channel, index) => {
+                if (data.channels[channel]) {
+                    const tab = document.createElement('button');
+                    tab.className = 'tab' + (index === 0 ? ' active' : '');
+                    tab.textContent = channelNames[channel];
+                    tab.onclick = () => switchTab(channel);
+                    tabs.appendChild(tab);
+                }
+            });
+
+            // 创建下载区域
+            const downloadsContainer = document.createElement('div');
+            channels.forEach((channel, index) => {
+                if (data.channels[channel]) {
+                    const div = createDownloadSection(channel, data.channels[channel]);
+                    div.className = 'downloads' + (index === 0 ? ' active' : '');
+                    div.id = `downloads-${channel}`;
+                    downloadsContainer.appendChild(div);
+                }
+            });
+
+            content.innerHTML = '';
+            content.appendChild(tabs);
+            content.appendChild(downloadsContainer);
+        }
+
+        function createDownloadSection(channel, channelData) {
+            const section = document.createElement('div');
+
+            // 版本信息
+            const versionInfo = document.createElement('div');
+            versionInfo.className = 'version-info';
+            versionInfo.innerHTML = `
+                <strong>版本号：</strong>${channelData.version} 
+                <span style="margin-left: 15px;"><strong>修订号：</strong>${channelData.revision}</span>
+            `;
+            section.appendChild(versionInfo);
+
+            // 下载卡片网格
+            const grid = document.createElement('div');
+            grid.className = 'download-grid';
+
+            for (const [platform, info] of Object.entries(channelData.downloads)) {
+                if (platformNames[platform]) {
+                    const card = document.createElement('div');
+                    card.className = 'download-card';
+                    
+                    const platformInfo = platformNames[platform];
+                    card.innerHTML = `
+                        <div class="platform-icon">${platformInfo.icon}</div>
+                        <div class="platform-name">${platformInfo.name}</div>
+                        <button class="download-btn" onclick="window.open('${info.url}', '_blank')">
+                            立即下载
+                        </button>
+                    `;
+                    grid.appendChild(card);
+                }
+            }
+
+            section.appendChild(grid);
+            return section;
+        }
+
+        function switchTab(channel) {
+            // 更新标签激活状态
+            document.querySelectorAll('.tab').forEach(tab => {
+                if (tab.textContent === channelNames[channel]) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+
+            // 更新下载区域显示
+            document.querySelectorAll('.downloads').forEach(div => {
+                if (div.id === `downloads-${channel}`) {
+                    div.classList.add('active');
+                } else {
+                    div.classList.remove('active');
+                }
+            });
+        }
+
+        function showError(message) {
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="error">
+                    <strong>❌ 获取数据失败</strong><br>
+                    ${message}<br><br>
+                    可能的原因：<br>
+                    1. Cloudflare Worker 未正确配置<br>
+                    2. 网络连接问题<br>
+                    3. API 端点暂时不可用
+                </div>
+                <button class="download-btn" onclick="location.reload()">重新尝试</button>
+            `;
+        }
+
+        // 页面加载时获取数据
+        fetchData();
+    </script>
+</body>
+</html>
