@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chrome 浏览器下载</title>
+    <meta name="description" content="Download the latest Chrome browser - Get download links for all platforms">
+    <title>Chrome Browser Download</title>
     <style>
         * {
             margin: 0;
@@ -12,7 +13,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
@@ -42,6 +43,16 @@
             font-size: 14px;
         }
 
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #1565c0;
+        }
+
         .warning {
             background: #fff3cd;
             border-left: 4px solid #ffc107;
@@ -58,6 +69,21 @@
             color: #666;
         }
 
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .error {
             background: #f8d7da;
             border-left: 4px solid #dc3545;
@@ -72,6 +98,7 @@
             gap: 10px;
             margin-bottom: 25px;
             border-bottom: 2px solid #e0e0e0;
+            flex-wrap: wrap;
         }
 
         .tab {
@@ -166,6 +193,7 @@
             font-size: 15px;
             font-weight: 600;
             transition: background 0.3s;
+            margin-bottom: 8px;
         }
 
         .download-btn:hover {
@@ -174,6 +202,14 @@
 
         .download-btn:active {
             transform: scale(0.98);
+        }
+
+        .download-btn.secondary {
+            background: #6c757d;
+        }
+
+        .download-btn.secondary:hover {
+            background: #5a6268;
         }
 
         .footer {
@@ -194,6 +230,31 @@
             text-decoration: underline;
         }
 
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #667eea;
+            color: white;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-left: 8px;
+        }
+
+        .badge.beta {
+            background: #ff9800;
+        }
+
+        .badge.dev {
+            background: #f44336;
+        }
+
+        .badge.canary {
+            background: #ffd700;
+            color: #333;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 25px;
@@ -206,90 +267,149 @@
             .download-grid {
                 grid-template-columns: 1fr;
             }
+
+            .channel-tabs {
+                gap: 5px;
+            }
+
+            .tab {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🌐 Chrome 浏览器下载</h1>
-        <p class="subtitle">适用于中国网络环境</p>
+        <h1>🌐 Chrome Browser Download</h1>
+        <p class="subtitle">Get the latest Chrome browser for all platforms</p>
 
-        <div class="warning">
-            ⚠️ <strong>注意：</strong>下载链接来自 Google 官方 CDN (storage.googleapis.com)，
-            在某些地区可能无法访问。如遇问题，建议使用代理或稍后重试。
+        <div class="info">
+            ℹ️ <strong>Note:</strong> This page provides download links from Google's official Chrome for Testing CDN.
+            All downloads are official Chrome binaries from Google.
         </div>
 
         <div id="content">
             <div class="loading">
-                <p>正在获取最新版本信息...</p>
+                <div class="spinner"></div>
+                <p>Fetching latest version information...</p>
             </div>
         </div>
 
         <div class="footer">
-            数据来源：<a href="https://googlechromelabs.github.io/chrome-for-testing/" target="_blank">Chrome for Testing</a>
-            | 本站仅提供链接索引，不存储任何文件
+            Data source: <a href="https://googlechromelabs.github.io/chrome-for-testing/" target="_blank">Chrome for Testing</a>
+            | This site only provides link indexing, no files are stored
         </div>
     </div>
 
     <script>
-        // 替换为你的 Cloudflare Worker URL
-        const API_URL = 'https://chrome-download-api.nivy.li';
-        
-        // 如果没有部署 Worker，可以直接用官方 API（可能较慢）
-        // const API_URL = 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json';
-
-        const platformNames = {
-            'win64': { name: 'Windows 64位', icon: '🪟' },
-            'win32': { name: 'Windows 32位', icon: '🪟' },
-            'mac-x64': { name: 'macOS (Intel)', icon: '🍎' },
-            'mac-arm64': { name: 'macOS (Apple Silicon)', icon: '🍎' },
-            'linux64': { name: 'Linux 64位', icon: '🐧' }
+        // Configuration
+        const CONFIG = {
+            // Option 1: Use Cloudflare Worker (if you deployed one)
+            // API_URL: 'https://chrome-download-api.nivy.li',
+            
+            // Option 2: Use official Google API directly (may be slower in some regions)
+            API_URL: 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json',
+            
+            // Enable proxy download feature (requires Worker with proxy support)
+            USE_PROXY: false
         };
 
-        const channelNames = {
-            'stable': '稳定版',
-            'beta': '测试版',
-            'dev': '开发版',
-            'canary': '金丝雀版'
+        const platformNames = {
+            'win64': { name: 'Windows 64-bit', icon: '🪟' },
+            'win32': { name: 'Windows 32-bit', icon: '🪟' },
+            'mac-x64': { name: 'macOS (Intel)', icon: '🍎' },
+            'mac-arm64': { name: 'macOS (Apple Silicon)', icon: '🍎' },
+            'linux64': { name: 'Linux 64-bit', icon: '🐧' }
+        };
+
+        const channelInfo = {
+            'stable': { name: 'Stable', description: 'Recommended for most users', badge: '' },
+            'beta': { name: 'Beta', description: 'Preview upcoming features', badge: 'beta' },
+            'dev': { name: 'Dev', description: 'Latest development version', badge: 'dev' },
+            'canary': { name: 'Canary', description: 'Bleeding edge, updated daily', badge: 'canary' }
         };
 
         async function fetchData() {
             try {
-                const response = await fetch(API_URL);
+                const response = await fetch(CONFIG.API_URL);
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 const data = await response.json();
+                
+                // Transform data if using official API
+                if (!data.channels && data.channels) {
+                    data = transformOfficialAPIData(data);
+                }
+                
                 renderUI(data);
             } catch (error) {
                 showError(error.message);
             }
         }
 
+        function transformOfficialAPIData(data) {
+            // Transform official API format to our format
+            const transformed = {
+                timestamp: new Date().toISOString(),
+                channels: {},
+                proxyEnabled: false
+            };
+
+            for (const [channel, info] of Object.entries(data.channels)) {
+                const downloads = {};
+                
+                if (info.downloads && info.downloads.chrome) {
+                    for (const download of info.downloads.chrome) {
+                        downloads[download.platform] = {
+                            url: download.url,
+                            platform: download.platform
+                        };
+                    }
+                }
+
+                transformed.channels[channel.toLowerCase()] = {
+                    version: info.version,
+                    revision: info.revision,
+                    downloads
+                };
+            }
+
+            return transformed;
+        }
+
         function renderUI(data) {
             const content = document.getElementById('content');
             
-            // 创建标签页
+            // Create tabs
             const tabs = document.createElement('div');
             tabs.className = 'channel-tabs';
             
             const channels = ['stable', 'beta', 'dev', 'canary'];
-            channels.forEach((channel, index) => {
+            let firstChannel = null;
+            
+            channels.forEach((channel) => {
                 if (data.channels[channel]) {
+                    if (!firstChannel) firstChannel = channel;
+                    
                     const tab = document.createElement('button');
-                    tab.className = 'tab' + (index === 0 ? ' active' : '');
-                    tab.textContent = channelNames[channel];
+                    tab.className = 'tab' + (channel === firstChannel ? ' active' : '');
+                    
+                    const info = channelInfo[channel];
+                    tab.innerHTML = info.name + (info.badge ? `<span class="badge ${info.badge}">${info.badge}</span>` : '');
                     tab.onclick = () => switchTab(channel);
+                    tab.title = info.description;
                     tabs.appendChild(tab);
                 }
             });
 
-            // 创建下载区域
+            // Create download sections
             const downloadsContainer = document.createElement('div');
-            channels.forEach((channel, index) => {
+            channels.forEach((channel) => {
                 if (data.channels[channel]) {
-                    const div = createDownloadSection(channel, data.channels[channel]);
-                    div.className = 'downloads' + (index === 0 ? ' active' : '');
+                    const div = createDownloadSection(channel, data.channels[channel], data.proxyEnabled);
+                    div.className = 'downloads' + (channel === firstChannel ? ' active' : '');
                     div.id = `downloads-${channel}`;
                     downloadsContainer.appendChild(div);
                 }
@@ -300,19 +420,19 @@
             content.appendChild(downloadsContainer);
         }
 
-        function createDownloadSection(channel, channelData) {
+        function createDownloadSection(channel, channelData, proxyEnabled) {
             const section = document.createElement('div');
 
-            // 版本信息
+            // Version info
             const versionInfo = document.createElement('div');
             versionInfo.className = 'version-info';
             versionInfo.innerHTML = `
-                <strong>版本号：</strong>${channelData.version} 
-                <span style="margin-left: 15px;"><strong>修订号：</strong>${channelData.revision}</span>
+                <strong>Version:</strong> ${channelData.version} 
+                <span style="margin-left: 15px;"><strong>Revision:</strong> ${channelData.revision}</span>
             `;
             section.appendChild(versionInfo);
 
-            // 下载卡片网格
+            // Download cards grid
             const grid = document.createElement('div');
             grid.className = 'download-grid';
 
@@ -322,12 +442,28 @@
                     card.className = 'download-card';
                     
                     const platformInfo = platformNames[platform];
+                    const directUrl = info.url;
+                    const proxyUrl = info.proxyUrl;
+                    
+                    let buttonsHTML = `
+                        <button class="download-btn" onclick="window.open('${directUrl}', '_blank')">
+                            Download
+                        </button>
+                    `;
+                    
+                    // Add proxy button if available
+                    if (proxyEnabled && proxyUrl) {
+                        buttonsHTML += `
+                            <button class="download-btn secondary" onclick="window.open('${proxyUrl}', '_blank')">
+                                Download via Proxy
+                            </button>
+                        `;
+                    }
+                    
                     card.innerHTML = `
                         <div class="platform-icon">${platformInfo.icon}</div>
                         <div class="platform-name">${platformInfo.name}</div>
-                        <button class="download-btn" onclick="window.open('${info.url}', '_blank')">
-                            立即下载
-                        </button>
+                        ${buttonsHTML}
                     `;
                     grid.appendChild(card);
                 }
@@ -338,16 +474,17 @@
         }
 
         function switchTab(channel) {
-            // 更新标签激活状态
+            // Update tab active state
             document.querySelectorAll('.tab').forEach(tab => {
-                if (tab.textContent === channelNames[channel]) {
+                const channelName = channelInfo[channel].name;
+                if (tab.textContent.includes(channelName)) {
                     tab.classList.add('active');
                 } else {
                     tab.classList.remove('active');
                 }
             });
 
-            // 更新下载区域显示
+            // Update downloads display
             document.querySelectorAll('.downloads').forEach(div => {
                 if (div.id === `downloads-${channel}`) {
                     div.classList.add('active');
@@ -361,18 +498,18 @@
             const content = document.getElementById('content');
             content.innerHTML = `
                 <div class="error">
-                    <strong>❌ 获取数据失败</strong><br>
+                    <strong>❌ Failed to fetch data</strong><br>
                     ${message}<br><br>
-                    可能的原因：<br>
-                    1. Cloudflare Worker 未正确配置<br>
-                    2. 网络连接问题<br>
-                    3. API 端点暂时不可用
+                    Possible reasons:<br>
+                    1. Network connection issue<br>
+                    2. API endpoint temporarily unavailable<br>
+                    3. CORS restrictions (if using Worker, check configuration)
                 </div>
-                <button class="download-btn" onclick="location.reload()">重新尝试</button>
+                <button class="download-btn" onclick="location.reload()">Retry</button>
             `;
         }
 
-        // 页面加载时获取数据
+        // Fetch data when page loads
         fetchData();
     </script>
 </body>
