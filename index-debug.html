@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Download the latest Chrome browser - Get download links for all platforms">
+    <title>Chrome Browser Download - Debug Version</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 12px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .debug-info {
+            background: #f0f0f0;
+            border: 2px solid #666;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .debug-info div {
+            margin: 5px 0;
+        }
+
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #1565c0;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #856404;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+            color: #721c24;
+        }
+
+        .channel-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #e0e0e0;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .tab.active {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #667eea;
+        }
+
+        .downloads {
+            display: none;
+        }
+
+        .downloads.active {
+            display: block;
+        }
+
+        .version-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .version-info strong {
+            color: #667eea;
+        }
+
+        .download-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .download-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .download-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .platform-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .platform-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .download-btn {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: background 0.3s;
+            margin-bottom: 8px;
+        }
+
+        .download-btn:hover {
+            background: #5568d3;
+        }
+
+        .download-btn:active {
+            transform: scale(0.98);
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            color: #999;
+            font-size: 13px;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #667eea;
+            color: white;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-left: 8px;
+        }
+
+        .badge.beta {
+            background: #ff9800;
+        }
+
+        .badge.dev {
+            background: #f44336;
+        }
+
+        .badge.canary {
+            background: #ffd700;
+            color: #333;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+
+            .download-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Chrome Browser Download (Debug)</h1>
+        <p class="subtitle">Debug version with detailed logging</p>
+
+        <div class="debug-info" id="debugLog">
+            <div>Debug log will appear here...</div>
+        </div>
+
+        <div id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Fetching latest version information...</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            Data source: <a href="https://googlechromelabs.github.io/chrome-for-testing/" target="_blank">Chrome for Testing</a>
+        </div>
+    </div>
+
+    <script>
+        // Debug logging
+        const debugLog = document.getElementById('debugLog');
+        function log(message, data) {
+            console.log(message, data);
+            const div = document.createElement('div');
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            if (data) {
+                div.textContent += ': ' + JSON.stringify(data, null, 2).substring(0, 200);
+            }
+            debugLog.appendChild(div);
+            debugLog.scrollTop = debugLog.scrollHeight;
+        }
+
+        // Configuration
+        const CONFIG = {
+            API_URL: 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json',
+            USE_PROXY: false
+        };
+
+        log('Starting app', { API_URL: CONFIG.API_URL });
+
+        const platformNames = {
+            'win64': { name: 'Windows 64-bit', icon: '🪟' },
+            'win32': { name: 'Windows 32-bit', icon: '🪟' },
+            'mac-x64': { name: 'macOS (Intel)', icon: '🍎' },
+            'mac-arm64': { name: 'macOS (Apple Silicon)', icon: '🍎' },
+            'linux64': { name: 'Linux 64-bit', icon: '🐧' }
+        };
+
+        const channelInfo = {
+            'stable': { name: 'Stable', description: 'Recommended for most users', badge: '' },
+            'beta': { name: 'Beta', description: 'Preview upcoming features', badge: 'beta' },
+            'dev': { name: 'Dev', description: 'Latest development version', badge: 'dev' },
+            'canary': { name: 'Canary', description: 'Bleeding edge, updated daily', badge: 'canary' }
+        };
+
+        async function fetchData() {
+            try {
+                log('Fetching data from API...');
+                const response = await fetch(CONFIG.API_URL);
+                log('Response received', { status: response.status, ok: response.ok });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const rawData = await response.json();
+                log('Raw data parsed', { keys: Object.keys(rawData), channelsType: typeof rawData.channels });
+                
+                // Check data structure
+                if (!rawData.channels) {
+                    log('ERROR: No channels property in data!', rawData);
+                    throw new Error('Invalid data structure: missing channels property');
+                }
+                
+                log('Channels found', Object.keys(rawData.channels));
+                
+                // Transform data
+                const data = transformOfficialAPIData(rawData);
+                log('Data transformed', { channelCount: Object.keys(data.channels).length });
+                
+                renderUI(data);
+                log('UI rendered successfully');
+                
+            } catch (error) {
+                log('ERROR occurred', { message: error.message, stack: error.stack });
+                showError(error.message);
+            }
+        }
+
+        function transformOfficialAPIData(rawData) {
+            log('Starting data transformation...');
+            const transformed = {
+                timestamp: new Date().toISOString(),
+                channels: {},
+                proxyEnabled: false
+            };
+
+            for (const [channel, info] of Object.entries(rawData.channels)) {
+                log(`Processing channel: ${channel}`, { version: info.version });
+                const downloads = {};
+                
+                if (info.downloads && info.downloads.chrome) {
+                    log(`Found ${info.downloads.chrome.length} chrome downloads for ${channel}`);
+                    for (const download of info.downloads.chrome) {
+                        downloads[download.platform] = {
+                            url: download.url,
+                            platform: download.platform
+                        };
+                    }
+                } else {
+                    log(`WARNING: No chrome downloads found for ${channel}`);
+                }
+
+                transformed.channels[channel.toLowerCase()] = {
+                    version: info.version,
+                    revision: info.revision,
+                    downloads
+                };
+            }
+
+            log('Transformation complete', { channelCount: Object.keys(transformed.channels).length });
+            return transformed;
+        }
+
+        function renderUI(data) {
+            log('Starting UI render...');
+            const content = document.getElementById('content');
+            
+            // Create tabs
+            const tabs = document.createElement('div');
+            tabs.className = 'channel-tabs';
+            
+            const channels = ['stable', 'beta', 'dev', 'canary'];
+            let firstChannel = null;
+            
+            channels.forEach((channel) => {
+                if (data.channels[channel]) {
+                    if (!firstChannel) firstChannel = channel;
+                    log(`Creating tab for ${channel}`);
+                    
+                    const tab = document.createElement('button');
+                    tab.className = 'tab' + (channel === firstChannel ? ' active' : '');
+                    
+                    const info = channelInfo[channel];
+                    tab.innerHTML = info.name + (info.badge ? `<span class="badge ${info.badge}">${info.badge}</span>` : '');
+                    tab.onclick = () => switchTab(channel);
+                    tab.title = info.description;
+                    tabs.appendChild(tab);
+                }
+            });
+
+            log(`Created ${tabs.children.length} tabs`);
+
+            // Create download sections
+            const downloadsContainer = document.createElement('div');
+            channels.forEach((channel) => {
+                if (data.channels[channel]) {
+                    log(`Creating download section for ${channel}`);
+                    const div = createDownloadSection(channel, data.channels[channel], data.proxyEnabled);
+                    div.className = 'downloads' + (channel === firstChannel ? ' active' : '');
+                    div.id = `downloads-${channel}`;
+                    downloadsContainer.appendChild(div);
+                }
+            });
+
+            content.innerHTML = '';
+            content.appendChild(tabs);
+            content.appendChild(downloadsContainer);
+            
+            log('UI render complete');
+        }
+
+        function createDownloadSection(channel, channelData, proxyEnabled) {
+            log(`Building download section for ${channel}`, { downloadCount: Object.keys(channelData.downloads).length });
+            const section = document.createElement('div');
+
+            // Version info
+            const versionInfo = document.createElement('div');
+            versionInfo.className = 'version-info';
+            versionInfo.innerHTML = `
+                <strong>Version:</strong> ${channelData.version} 
+                <span style="margin-left: 15px;"><strong>Revision:</strong> ${channelData.revision}</span>
+            `;
+            section.appendChild(versionInfo);
+
+            // Download cards grid
+            const grid = document.createElement('div');
+            grid.className = 'download-grid';
+
+            let cardCount = 0;
+            for (const [platform, info] of Object.entries(channelData.downloads)) {
+                if (platformNames[platform]) {
+                    cardCount++;
+                    const card = document.createElement('div');
+                    card.className = 'download-card';
+                    
+                    const platformInfo = platformNames[platform];
+                    const directUrl = info.url;
+                    
+                    card.innerHTML = `
+                        <div class="platform-icon">${platformInfo.icon}</div>
+                        <div class="platform-name">${platformInfo.name}</div>
+                        <button class="download-btn" onclick="window.open('${directUrl}', '_blank')">
+                            Download
+                        </button>
+                    `;
+                    grid.appendChild(card);
+                }
+            }
+
+            log(`Created ${cardCount} download cards for ${channel}`);
+            section.appendChild(grid);
+            return section;
+        }
+
+        function switchTab(channel) {
+            log(`Switching to ${channel} tab`);
+            // Update tab active state
+            document.querySelectorAll('.tab').forEach(tab => {
+                const channelName = channelInfo[channel].name;
+                if (tab.textContent.includes(channelName)) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+
+            // Update downloads display
+            document.querySelectorAll('.downloads').forEach(div => {
+                if (div.id === `downloads-${channel}`) {
+                    div.classList.add('active');
+                } else {
+                    div.classList.remove('active');
+                }
+            });
+        }
+
+        function showError(message) {
+            log('Showing error to user', { message });
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="error">
+                    <strong>❌ Failed to fetch data</strong><br>
+                    ${message}<br><br>
+                    Check the debug log above for more details.
+                </div>
+                <button class="download-btn" onclick="location.reload()">Retry</button>
+            `;
+        }
+
+        // Fetch data when page loads
+        log('Document loaded, starting fetch...');
+        fetchData();
+    </script>
+</body>
+</html>
